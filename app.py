@@ -85,12 +85,16 @@ if os.path.exists(KB_FILE_PATH):
 else:
     KNOWLEDGE_BASE = {}
 
-# Encode background image for seamless CSS embedding
+# Convert background and avatar images to base64 Data URIs for 100% reliable rendering
 BG_DATA_URI = ""
 if os.path.exists(BG_IMAGE_PATH):
-    with open(BG_IMAGE_PATH, "rb") as img_f:
-        encoded = base64.b64encode(img_f.read()).decode("utf-8")
-        BG_DATA_URI = f"data:image/jpeg;base64,{encoded}"
+    with open(BG_IMAGE_PATH, "rb") as f:
+        BG_DATA_URI = f"data:image/jpeg;base64,{base64.b64encode(f.read()).decode('utf-8')}"
+
+BOT_AVATAR_URI = ""
+if os.path.exists(BOT_AVATAR_PATH):
+    with open(BOT_AVATAR_PATH, "rb") as f:
+        BOT_AVATAR_URI = f"data:image/png;base64,{base64.b64encode(f.read()).decode('utf-8')}"
 
 # =====================================================================
 # SQLITE DATABASE & FICTIONAL CUSTOMER DATA
@@ -458,7 +462,7 @@ def get_assistant() -> FlanT5Assistant:
     return _flan_assistant
 
 # =====================================================================
-# 9-STEP CHATBOT WORKFLOW (CLEAN USER OUTPUT)
+# 9-STEP CHATBOT WORKFLOW (COMPLETELY CLEAN - NO LATENCY TEXT)
 # =====================================================================
 
 def process_customer_message(user_message: str, auth_user: Optional[Dict]) -> Tuple[str, str, float]:
@@ -566,29 +570,31 @@ def run_evaluation_suite() -> Tuple[pd.DataFrame, float]:
     return df, success_rate
 
 # =====================================================================
-# LIGHT THEME CUSTOM CSS (FEATURING USER'S BACKGROUND IMAGE)
+# INJECTED HTML STYLE TAG (GUARANTEED TO APPLY BACKGROUND IN ALL BROWSERS)
 # =====================================================================
 
-BG_STYLE = ""
+BG_INLINE_CSS = ""
 if BG_DATA_URI:
-    BG_STYLE = f"""
-    background-image: linear-gradient(135deg, rgba(255, 255, 255, 0.88) 0%, rgba(241, 245, 249, 0.93) 100%), url('{BG_DATA_URI}') !important;
+    BG_INLINE_CSS = f"""
+    background-image: linear-gradient(135deg, rgba(255, 255, 255, 0.88) 0%, rgba(240, 245, 250, 0.92) 100%), url('{BG_DATA_URI}') !important;
     background-size: cover !important;
     background-position: center center !important;
     background-attachment: fixed !important;
+    background-repeat: no-repeat !important;
     """
 else:
-    BG_STYLE = "background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%) !important;"
+    BG_INLINE_CSS = "background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%) !important;"
 
-CUSTOM_LIGHT_CSS = f"""
-/* Light Theme with Subtle AI Robot Background & High-Contrast Dark Text */
-.gradio-container {{
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
-    {BG_STYLE}
+INJECTED_STYLE = f"""
+<style>
+/* 1. Global Page Background using User's Image */
+html, body, gradio-app, .gradio-container, .contain {{
+    {BG_INLINE_CSS}
     color: #0f172a !important;
-    min-height: 100vh !important;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif !important;
 }}
 
+/* 2. Header Panel */
 #header-card {{
     background: linear-gradient(135deg, #3730a3 0%, #4f46e5 50%, #7c3aed 100%) !important;
     padding: 24px !important;
@@ -614,21 +620,31 @@ CUSTOM_LIGHT_CSS = f"""
     font-weight: 500 !important;
 }}
 
+/* 3. Cards with crisp white glassmorphism and deep dark text */
 .panel-card {{
     background: rgba(255, 255, 255, 0.94) !important;
     border: 1px solid rgba(203, 213, 225, 0.9) !important;
     border-radius: 16px !important;
-    backdrop-filter: blur(12px) !important;
+    backdrop-filter: blur(14px) !important;
     padding: 18px !important;
-    box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08) !important;
+    box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.08) !important;
     color: #0f172a !important;
 }}
 
-.panel-card h3, .panel-card label, .panel-card p, .panel-card span {{
+.panel-card h3, .panel-card label, .panel-card p, .panel-card span, .panel-card div {{
     color: #0f172a !important;
     font-weight: 600 !important;
 }}
 
+/* 4. Chatbot Box Styling */
+.chatbot, .chatbot-wrap, [data-testid="chatbot"] {{
+    background: rgba(255, 255, 255, 0.92) !important;
+    border: 1px solid rgba(203, 213, 225, 0.9) !important;
+    border-radius: 16px !important;
+    box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.08) !important;
+}}
+
+/* 5. Status Badges */
 .auth-badge {{
     padding: 9px 16px !important;
     border-radius: 10px !important;
@@ -650,6 +666,7 @@ CUSTOM_LIGHT_CSS = f"""
     color: #065f46 !important;
 }}
 
+/* 6. Buttons */
 .btn-primary {{
     background: linear-gradient(135deg, #4f46e5 0%, #6366f1 100%) !important;
     color: #ffffff !important;
@@ -657,10 +674,6 @@ CUSTOM_LIGHT_CSS = f"""
     border-radius: 10px !important;
     border: none !important;
     box-shadow: 0 4px 14px rgba(79, 70, 229, 0.3) !important;
-}}
-
-.btn-primary:hover {{
-    box-shadow: 0 6px 18px rgba(79, 70, 229, 0.45) !important;
 }}
 
 .btn-danger {{
@@ -672,11 +685,11 @@ CUSTOM_LIGHT_CSS = f"""
 }}
 
 .btn-pill {{
-    background: rgba(241, 245, 249, 0.9) !important;
+    background: rgba(241, 245, 249, 0.95) !important;
     border: 1px solid #cbd5e1 !important;
     color: #1e293b !important;
     font-size: 0.88rem !important;
-    font-weight: 500 !important;
+    font-weight: 600 !important;
     text-align: left !important;
     margin-bottom: 6px !important;
     border-radius: 10px !important;
@@ -689,18 +702,17 @@ CUSTOM_LIGHT_CSS = f"""
     color: #3730a3 !important;
     transform: translateX(4px) !important;
 }}
-
-/* Ensure chatbot box has high contrast white background and crisp dark text */
-.bubble-wrap {{
-    background: rgba(255, 255, 255, 0.92) !important;
-}}
+</style>
 """
 
 def create_gradio_interface():
-    avatar_tuple = (None, BOT_AVATAR_PATH) if os.path.exists(BOT_AVATAR_PATH) else None
+    avatar_tuple = (None, BOT_AVATAR_URI) if BOT_AVATAR_URI else None
 
-    with gr.Blocks(title="ShopEase AI Assistant", css=CUSTOM_LIGHT_CSS, theme=gr.themes.Soft(primary_hue="indigo")) as demo:
+    with gr.Blocks(title="ShopEase AI Assistant") as demo:
         session_user = gr.State(value=None)
+
+        # Inject Light Theme Background & Styling directly into the HTML DOM
+        gr.HTML(INJECTED_STYLE)
 
         # Header
         gr.HTML("""
@@ -792,7 +804,7 @@ def create_gradio_interface():
                     clear_button = gr.Button("🗑️ Clear Conversation", scale=1)
 
         # -------------------------------------------------------------
-        # Event Handlers (Gradio 6 Clean Message Output)
+        # Event Handlers (Clean Output - No Latency)
         # -------------------------------------------------------------
 
         def signin_action(email, password):
@@ -830,7 +842,7 @@ def create_gradio_interface():
                 if isinstance(last_msg, list):
                     last_msg = " ".join(item.get("text", "") if isinstance(item, dict) else str(item) for item in last_msg)
                 
-                # Clean answer without latency or debug text
+                # Returns clean response with no latency or debug rules
                 reply, category, latency = process_customer_message(str(last_msg), user)
                 history.append({"role": "assistant", "content": reply})
             return history
